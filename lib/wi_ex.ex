@@ -1,18 +1,23 @@
 defmodule WiEx do
-  @moduledoc """
-  Documentation for WiEx.
-  """
+  use GenServer
+require Logger
+#https://stackoverflow.com/questions/22001247/redis-how-to-store-associative-array-set-or-hash-or-list
 
-  @doc """
-  Hello world.
+  def start_link do
+    GenServer.start_link(__MODULE__, %{}, [name: __MODULE__])
+  end
 
-  ## Examples
+  def get_interfaces do
+    {result, status} = System.cmd "sudo", ["airmon-ng"]
+    [headers | interfaces] = result
+    |> String.split("\n")
+    |> Enum.map(fn(row) -> String.split(row, "\t") end)
+    |> Enum.filter(fn(row) -> Enum.count(row) > 1 end)
 
-      iex> WiEx.hello
-      :world
+    headers = headers
+    |> Enum.map(fn(h) -> String.downcase(h) end)
 
-  """
-  def hello do
-    :world
+    interfaces
+    |> Enum.map(fn(i) -> Enum.zip(headers, i) |> Enum.into(%{}) end)
   end
 end
